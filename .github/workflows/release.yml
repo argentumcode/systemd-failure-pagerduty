@@ -22,7 +22,6 @@ jobs:
 
   release:
     name: Release
-    environment: production
     runs-on: ubuntu-22.04
     needs:
       - release-prepare
