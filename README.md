@@ -21,8 +21,6 @@ After=network.target
 Type=simple
 ExecStart=/bin/systemd-failure-pagerduty %i
 EnvironmentFile=/etc/default/systemd-failure-pagerduty
-User=nobody
-Group=nogroup
 ```
 
 Write the necessary environment variables in `/etc/default/systemd-failure-pagerduty`.
