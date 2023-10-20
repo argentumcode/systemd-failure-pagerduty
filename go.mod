@@ -1,7 +1,9 @@
 module github.com/argentumcode/systemd-failure-pagerduty
 
-go 1.19
+go 1.21
 
-require github.com/PagerDuty/go-pagerduty v1.6.0
+toolchain go1.21.3
 
-require github.com/google/go-querystring v1.0.0 // indirect
+require github.com/PagerDuty/go-pagerduty v1.7.0
+
+require github.com/google/go-querystring v1.1.0 // indirect

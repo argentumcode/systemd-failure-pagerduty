@@ -13,7 +13,7 @@ jobs:
       version: ${{ steps.prepare.outputs.version }}
       changeLog: ${{ steps.prepare.outputs.changeLog }}
     steps:
-      - uses: argentumcode/release-action@v0.1.1
+      - uses: argentumcode/release-action@v0.1.2
         id: prepare
         with:
           action: prepare
@@ -30,9 +30,9 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
-          go-version: "1.19"
+          go-version-file: "go.mod"
 
       - name: Prepare Release
         run: |
@@ -43,10 +43,10 @@ jobs:
           RELEASE_NOTE: ${{ needs.release-prepare.outputs.changeLog }}
 
       - name: Release
-        uses: goreleaser/goreleaser-action@ff11ca24a9b39f2d36796d1fbd7a4e39c182630a # v3.1.0
+        uses: goreleaser/goreleaser-action@7ec5c2b0c6cdda6e8bbb49444bc797dd33d74dd8 # v5.0.0
         with:
           distribution: goreleaser
-          version: v1.11.5
+          version: v1.21.2
           args: release --release-notes /tmp/release-notes.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,7 +64,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: "16"
+          node-version: "18"
 
       - name: Prepare Release Notes
         id: release_notes
@@ -77,7 +77,7 @@ jobs:
           echo "::set-output name=version::${TAG:1}"
           git diff HEAD^1 HEAD CHANGELOG.md | egrep -v '^\+\+\+' | grep -e '^\+' | sed -e 's/^\+//g' > /tmp/release-notes.txt
       - name: Create Release Pull Request
-        uses: argentumcode/release-action@v0.1.1
+        uses: argentumcode/release-action@v0.1.2
         with:
           action: create-pull-request
           token: ${{ secrets.GITHUB_TOKEN }}
