@@ -14,6 +14,7 @@ import (
 	"github.com/PagerDuty/go-pagerduty"
 )
 
+const RETRY_COUNT = 6
 const errorTouchPath = "/var/tmp/failure-systemd-failure-notification"
 
 func main() {
@@ -56,8 +57,24 @@ func main() {
 		Details:   details,
 	}
 	event.Payload = payload
-	if _, err := pagerduty.ManageEventWithContext(context.Background(), event); err != nil {
-		log.Printf("failed to send to pagerduty: %+v", err)
+
+	var retryErr error
+	retryWaitDuration := time.Second
+	for retryCount := 0; retryCount <= RETRY_COUNT; retryCount += 1 {
+		if retryCount > 0 {
+			time.Sleep(retryWaitDuration)
+			retryWaitDuration *= 2
+		}
+		if _, err := pagerduty.ManageEventWithContext(context.Background(), event); err != nil {
+			log.Printf("failed to send to pagerduty: %+v", err)
+			retryErr = err
+		} else {
+			retryErr = nil
+			break
+		}
+	}
+
+	if retryErr != nil {
 		f, err := os.Create(errorTouchPath)
 		if err != nil {
 			log.Printf("failed to touch error file: %+v", err)
