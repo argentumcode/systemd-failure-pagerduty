@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"net/http"
@@ -57,6 +58,7 @@ func main() {
 		Details:   details,
 	}
 	event.Payload = payload
+	event.DedupKey = fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s-%s", hostName, unitName))))
 
 	var retryErr error
 	retryWaitDuration := time.Second
@@ -65,6 +67,7 @@ func main() {
 			time.Sleep(retryWaitDuration)
 			retryWaitDuration *= 2
 		}
+
 		if _, err := pagerduty.ManageEventWithContext(context.Background(), event); err != nil {
 			log.Printf("failed to send to pagerduty: %+v", err)
 			retryErr = err
