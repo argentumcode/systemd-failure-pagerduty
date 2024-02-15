@@ -32,5 +32,7 @@ jobs:
 
       - run: go build
 
+      - run: go test -v
+
       - name: Check git repository clean
         run: git diff --exit-code

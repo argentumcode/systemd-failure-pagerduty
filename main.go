@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"text/template"
 	"time"
 
 	"github.com/PagerDuty/go-pagerduty"
@@ -17,6 +18,30 @@ import (
 
 const RETRY_COUNT = 6
 const errorTouchPath = "/var/tmp/failure-systemd-failure-notification"
+
+const DEFAULT_SUMMARY_TEMPLATE = "[{{.HostName}}] systemd failure {{.UnitName}}"
+
+func generateSummary(templateText string, hostName string, unitName string) string {
+	tmpl := template.New("summary")
+	tmpl, err := tmpl.Parse(templateText)
+	if err != nil {
+		log.Printf("failed to parse summary template. use default summary: %+v", err)
+		return fmt.Sprintf("[%s] systemd failure %s", hostName, unitName)
+	}
+	output := bytes.Buffer{}
+	err = tmpl.Execute(&output, struct {
+		HostName string
+		UnitName string
+	}{
+		HostName: hostName,
+		UnitName: unitName,
+	})
+	if err != nil {
+		log.Printf("failed to execute summary template. use default summary: %+v", err)
+		return fmt.Sprintf("[%s] systemd failure %s", hostName, unitName)
+	}
+	return output.String()
+}
 
 func main() {
 	if httpProxy := os.Getenv("HTTP_PROXY"); httpProxy != "" {
@@ -29,6 +54,11 @@ func main() {
 			}
 		}
 	}
+	summaryTemplate := os.Getenv("SUMMARY_TEMPLATE")
+	if summaryTemplate == "" {
+		summaryTemplate = DEFAULT_SUMMARY_TEMPLATE
+	}
+
 	hostName, err := os.Hostname()
 	if err != nil {
 		log.Printf("failed to get host name: %+v", err)
@@ -50,7 +80,7 @@ func main() {
 	details := make(map[string]string)
 	details["status"] = out.String()
 	payload := &pagerduty.V2Payload{
-		Summary:   fmt.Sprintf("[%s] systemd failure %s", hostName, unitName),
+		Summary:   generateSummary(summaryTemplate, hostName, unitName),
 		Timestamp: time.Now().Format(time.RFC3339),
 		Severity:  "critical",
 		Source:    hostName,
