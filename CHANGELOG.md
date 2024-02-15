@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/argentumcode/systemd-failure-pagerduty/compare/v1.1.0...v1.2.0) (2024-02-15)
+
+
+### Features
+
+* support customize alert summary ([8a23cd2](https://github.com/argentumcode/systemd-failure-pagerduty/commit/8a23cd28de9eb280752f5ae3b0e60777cf172fce))
+
 ## [1.1.0](https://github.com/argentumcode/systemd-failure-pagerduty/compare/v1.0.0...v1.1.0) (2023-12-15)
 
 
