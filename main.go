@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 	"text/template"
 	"time"
 
@@ -59,6 +60,13 @@ func main() {
 		summaryTemplate = DEFAULT_SUMMARY_TEMPLATE
 	}
 
+	routingKeysEnv := os.Getenv("PAGERDUTY_ROUTING_KEY")
+	routingKeys := strings.Split(routingKeysEnv, ",")
+	if len(routingKeys) == 0 || routingKeys[0] == "" {
+		log.Printf("PAGERDUTY_ROUTING_KEY is empty")
+		return
+	}
+
 	hostName, err := os.Hostname()
 	if err != nil {
 		log.Printf("failed to get host name: %+v", err)
@@ -73,9 +81,8 @@ func main() {
 		log.Printf("failed to get systemd status: %+v", err)
 	}
 	event := pagerduty.V2Event{
-		Action:     "trigger",
-		Client:     "systemd-failure-notification",
-		RoutingKey: os.Getenv("PAGERDUTY_ROUTING_KEY"),
+		Action: "trigger",
+		Client: "systemd-failure-notification",
 	}
 	details := make(map[string]string)
 	details["status"] = out.String()
@@ -90,31 +97,35 @@ func main() {
 	event.Payload = payload
 	event.DedupKey = fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s-%s", hostName, unitName))))
 
-	var retryErr error
-	retryWaitDuration := time.Second
-	for retryCount := 0; retryCount <= RETRY_COUNT; retryCount += 1 {
-		if retryCount > 0 {
-			time.Sleep(retryWaitDuration)
-			retryWaitDuration *= 2
+	for i, routingKey := range routingKeys {
+		event.RoutingKey = routingKey
+
+		var retryErr error
+		retryWaitDuration := time.Second
+		for retryCount := 0; retryCount <= RETRY_COUNT; retryCount += 1 {
+			if retryCount > 0 {
+				time.Sleep(retryWaitDuration)
+				retryWaitDuration *= 2
+			}
+
+			if _, err := pagerduty.ManageEventWithContext(context.Background(), event); err != nil {
+				log.Printf("failed to send to pagerduty for routing key #%d: %+v", i+1, err)
+				retryErr = err
+			} else {
+				retryErr = nil
+				break
+			}
 		}
 
-		if _, err := pagerduty.ManageEventWithContext(context.Background(), event); err != nil {
-			log.Printf("failed to send to pagerduty: %+v", err)
-			retryErr = err
-		} else {
-			retryErr = nil
-			break
-		}
-	}
-
-	if retryErr != nil {
-		f, err := os.Create(errorTouchPath)
-		if err != nil {
-			log.Printf("failed to touch error file: %+v", err)
-			return
-		}
-		if err := f.Close(); err != nil {
-			log.Printf("failed to touch error file: %+v", err)
+		if retryErr != nil {
+			f, err := os.Create(errorTouchPath)
+			if err != nil {
+				log.Printf("failed to touch error file: %+v", err)
+				return
+			}
+			if err := f.Close(); err != nil {
+				log.Printf("failed to touch error file: %+v", err)
+			}
 		}
 	}
 }
