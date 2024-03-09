@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/argentumcode/systemd-failure-pagerduty/compare/v1.2.0...v1.3.0) (2024-03-09)
+
+
+### Features
+
+* support multiple PagerDuty API keys ([9910aac](https://github.com/argentumcode/systemd-failure-pagerduty/commit/9910aac87ab5f26635957f63dae25ae8a29dd649))
+
 ## [1.2.0](https://github.com/argentumcode/systemd-failure-pagerduty/compare/v1.1.0...v1.2.0) (2024-02-15)
 
 
